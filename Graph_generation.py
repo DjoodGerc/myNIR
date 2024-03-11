@@ -4,16 +4,66 @@ import numpy as np
 
 class Graph:
 
-    def random_painting(self,n_colors):
-        painting={i: np.random.randint(1,n_colors)   for i in self.graph.keys()}
-        print(painting)
 
-    def graph_generation(self,n_vertice, mean_degree):
+    painting = {}
+    graph = {}
+
+    def set_painting(self,painting: painting):
+        self.painting=painting
+
+    def __init__(self,n_vertice:int,mean_degree:int):
+        self.graph_generation(n_vertice,mean_degree)
+
+
+    """
+     ошибка при изменении одного цвета
+     изменение цвета вершины влияет только на соседей
+    """
+    def find_differents_painting_with_one_changed_color(self,vertice,color):
+        keys=self.graph[vertice].keys()
+        err_old=0
+        for i in keys:
+            if self.painting[vertice]==self.painting[i]:
+                err_old+=1
+        err_new:int =0
+        for i in keys:
+            if color == self.painting[i]:
+                err_new += 1
+
+        delta=(err_new-err_old)
+        return delta,err_new,err_old
+
+
+    """
+    вычисление полной ошибки раскраски
+
+    !оптимизировать!
+    """
+    def calculate_painting_error(self,painting=painting)->float:
+        err=0
+        already_checked={i:[] for i in self.graph.keys()}
+
+        for i in self.graph.keys():
+            this_ver_color=painting[i]
+            for j in self.graph[i].keys():
+                if not i in already_checked[j]:
+                    if this_ver_color==painting[j]:
+                        err+=1
+                    already_checked[i].append(j)
+
+
+        return err
+
+
+    """
+    генерация графа
+    """
+    def graph_generation(self,n_vertice: int , mean_degree: int)->dict:
         rs = np.random.RandomState(42)
         graph = {i: {} for i in range(n_vertice)}
 
         n_edges = mean_degree * n_vertice / 2
-        while n_edges >= 0:
+        while n_edges > 0:
 
             while True:
                 v1 = rs.randint(n_vertice)
@@ -29,18 +79,18 @@ class Graph:
             n_edges -= 1
         print(f"error: {sum(map(len,graph.values()))}")
         self.graph=graph
+
         return graph
 
 
 
 
 
-
 if __name__ == '__main__':
-    a=Graph()
-    a.graph_generation(9,3)
+    a=Graph(5,2)
+
     print(a.graph)
-    a.random_painting(5)
+    # a.random_painting(5)
 
 
     # print(check(graph_generation(3, 33)))
