@@ -1,90 +1,43 @@
-import networkx as nx
-from matplotlib import pyplot as plt
-import random
 from Graph_generation import Graph
-from Greedy_alg import greedy_algorithm
-from Annealing_alg import annealing_algorithm
-from Greedy_alg import greedy_algorithm
+import matplotlib
+matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
+
+def errors_convergence(n_vertice,mean_degree, n_color,t,dec, seed=42):
+    g = Graph(n_vertice, mean_degree)
 
 
+    fst_ann = g.annealing(n_color,t, dec)
 
-def show_graph(G,coloring: dict,title=""):
-    """
-    визуализация графа, получение ошибки метода
-    input: граф, кол-во цветов, метод (+для отжига начальная температура и скорость ее повышения)
-    ??? поменять повышение на понижение ???
-    """
+    coloring_hc = g.hill_climbing(n_color)
 
-    my_graph_class=G
-    n_colors= len(coloring)
+    snd_ann=g.annealing_snd(n_color,t, dec)
 
+    plt.plot([i for i in range(1,len(fst_ann[1])+1)],fst_ann[1])
+    plt.legend("первый отжиг (авторский)")
+    plt.plot([i for i in range(1, len(snd_ann[1]) + 1)], snd_ann[1])
+    plt.legend("второй отжиг ")
+    plt.plot([i for i in range(1, len(coloring_hc[1]) + 1)], coloring_hc[1])
+    plt.legend("восхождение на гору")
+    print(g.get_obj(g.random_coloring(n_color)))
+    print()
+    print(g.get_obj(fst_ann[0]))
+    print(g.get_obj(snd_ann[0]))
+    print(g.get_obj(coloring_hc[0]))
+    print()
+    print(fst_ann[1][len(fst_ann[1]) - 1])
+    print(snd_ann[1][len(snd_ann[1]) - 1])
+    print(coloring_hc[1][len(coloring_hc[1]) - 1])
 
-
-    # библиотека для визуализации
-
-    g=nx.Graph()
-    g.add_nodes_from(list(my_graph_class.graph.keys()))
-
-    bind_colors={}
-
-    # случайные цвета для визаулизации
-
-    for i in range(n_colors):
-
-        r = lambda: random.randint(0, 255)
-        col = '#%02X%02X%02X' % (r(), r(), r())
-
-        while col in list(bind_colors.values()):
-
-            col = '#%02X%02X%02X' % (r(), r(), r())
-
-        bind_colors.update({i:col})
-
-    # словарь сопоставления номера цвета и реального цвета для визаулизации
-
-    colors=[bind_colors[coloring[i]] for i in list(my_graph_class.graph.keys())]
-
-
-    # библиотека для визуализации
-
-    for i in range(len(list(my_graph_class.graph.keys()))):
-        g.add_node(list(my_graph_class.graph.keys())[i],color=colors[i])
-
-
-
-    # добавление ребер для визаулизации
-
-    my_graph=my_graph_class.graph
-    edges_for_graph=[]
-    for i in list(my_graph.keys()):
-        arr=[]
-        arr.extend((i,j) for j in list(my_graph[i].keys()))
-        edges_for_graph.extend(arr)
-
-    g.add_edges_from(edges_for_graph)
-
-
-    nx.draw_circular(g,with_labels=True,node_color=colors)
-    plt.suptitle(title)
+    plt.xlabel("итерация")
+    plt.ylabel("ошибка")
+    plt.yscale('log')
+    plt.xscale('log')
     plt.show()
 
-    return G.get_obj(G.coloring)
 
-
-# print(f"annealing_err: {show_graph(g,5,annealing_algorithm)}")
-# print(f"greedy_err: {show_graph(g,5,greedy_algorithm)}")
-# g=Graph(10000,20)
-# print(f"annealing_err: {show_graph(g,10,annealing_algorithm)}")
-# print(f"greedy_err: {show_graph(g,10,greedy_algorithm)}")
 if __name__ == '__main__':
-    g = Graph(10,8)
-
-
-    coloring_ann=g.annealing(5, 0.85, 1.0001)
-    print(f"an: {show_graph(g, coloring_ann,'annealing')}")
-    coloring_hc=g.hill_climbing(5)
-
-    print(f"hc: {show_graph(g, coloring_hc, 'hc')}")
-
+   # errors_convergence(500,20,10,12,1.001)
+   errors_convergence(17, 7,4, 12, 1.01)
 
 
