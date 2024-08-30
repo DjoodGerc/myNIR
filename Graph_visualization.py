@@ -1,11 +1,13 @@
 import random
 # import matplotlib
+import matplotlib
 import networkx as nx
 from matplotlib import pyplot as plt
 
 from Graph_generation import Graph
-# matplotlib.use('Qt5Agg')
-# from Graph_generation import errors_convergence
+matplotlib.use('TkAgg')
+
+
 
 def show_graph(G, coloring: dict, title=""):
     """
@@ -60,7 +62,7 @@ def show_graph(G, coloring: dict, title=""):
     plt.suptitle(title)
     plt.show()
 
-    return G.get_obj(G.coloring)
+    return G.get_obj(coloring)
 
 
 # print(f"annealing_err: {show_graph(g,5,annealing_algorithm)}")
@@ -72,7 +74,7 @@ if __name__ == '__main__':
 
     g = Graph(15, 7)
     rand_col=g.random_coloring(4)
-    print(g.get_obj(rand_col))
+    # print(g.get_obj(rand_col))
     print(f"an: {show_graph(g, rand_col, 'random coloring')}")
     coloring_ann = g.annealing(4, 10, 1.034)[0]
 
@@ -80,8 +82,8 @@ if __name__ == '__main__':
 
     coloring_hc = g.hill_climbing(4)[0]
     print()
-    print(f"an: {show_graph(g, coloring_ann, 'annealing 1')}")
-    print(f"an: {show_graph(g, coloring_ann2, 'annealing 2')}")
+    print(f"an1: {show_graph(g, coloring_ann, 'annealing 1')}")
+    print(f"an2: {show_graph(g, coloring_ann2, 'annealing 2')}")
     print(f"hc: {show_graph(g, coloring_hc, 'hc')}")
     # g = Graph(300,100)
     # coloring_hc = g.hill_climbing(50)[0]

@@ -150,7 +150,7 @@ class Graph:
 
             k += 1
             obj_array.append(obj_array[len(obj_array)-1]+d)
-            print(k)
+            # print(k)
         # print(fst_o)
         return self.coloring,obj_array
 
@@ -222,7 +222,7 @@ class Graph:
             #     print(f"d: {d}")
             #     print(f"exp: {np.exp(-d/t)}")
             t /= inc
-            print(f"fst: {t}")
+            # print(f"fst: {t}")
 
 
         return self.coloring,obj_array
@@ -281,7 +281,7 @@ class Graph:
             #     print(f"d: {d}")
             #     print(f"exp: {np.exp(-d/t)}")
             t /= inc
-            print(f"snd: {t}")
+            # print(f"snd: {t}")
         return self.coloring,obj_array
 
 
@@ -289,9 +289,4 @@ class Graph:
 if __name__ == '__main__':
     a = Graph(5, 3)
 
-    # a.create_err_table(5)
 
-    # print(a.hill_climbing(3))
-    # a.random_coloring(5)
-
-    # print(check(graph_generation(3, 33)))
