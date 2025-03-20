@@ -4,18 +4,41 @@ from networkx.classes import non_neighbors
 from sklearn.neighbors import NearestNeighbors
 
 
+
 # from plots import show_graph
 
 class Graph:
     rs = np.random.RandomState(42)
+    n_vertices = 0
+    mean_degree = 0
     coloring = {}
     graph = {}
-    pos = []
+    pos = {}
 
     def get_graph(self):
+
         return self.graph
 
-    def __init__(self, n_vertices: int, mean_degree: int, coloring=None, graph=None):
+
+    def init_by_graph(self, graph: dict, pos: dict):
+        self.graph = dict(sorted(graph.items()))
+        self.n_vertices = len(graph)
+        # print(pos)
+        self.pos = dict(sorted(pos.items()))
+
+    def init_by_n_v_mean_degree(self, n_vertices: int, mean_degree: int, coloring=None, graph=None):
+        """
+
+        :param n_vertices: кол-во вершин
+        :param mean_degree: средняя степень вершины
+        :param coloring: раскраска
+        :param graph: граф
+
+        если coloring или graph == None - генерируем новый граф
+        иначе присваиваем раскраску и граф.
+        """
+        self.n_vertices = n_vertices
+        self.mean_degree = mean_degree
         if coloring is None or Graph is None:
             self.graph_generation(n_vertices, mean_degree)
         else:
@@ -24,9 +47,15 @@ class Graph:
 
     def get_d_obj(self, vertice, color):
         """
-             ошибка при изменении одного цвета
-             изменение цвета вершины влияет только на соседей
+        ошибка при изменении одного цвета
+        изменение цвета вершины влияет только на соседей
+
+
+        :param vertice: вершина
+        :param color: цвет
+        :return: delta, новая ошибка, старая ошибка
         """
+
         keys = self.graph[vertice].keys()
         err_old = 0
         for i in keys:
@@ -59,18 +88,34 @@ class Graph:
                     already_checked[i].append(j)
 
         return err
+    def get_n_edges(self):
+        n_edges=0
+        for i in self.graph:
+            n_edges+=len(self.graph[i])
+        return n_edges/2
 
-    def graph_generation_knn(self, n_vertice: int, mean_degree: int):
-        dots = [[self.rs.rand() * 10, self.rs.rand() * 10] for i in range(n_vertice)]
+    def graph_generation_knn(self, n_vertice: int, mean_degree: int) -> dict:
+        """
+        генерация графов, используя k ближайших соседей + pos
+        :param n_vertice:
+        :param mean_degree:
+        :return:
+        """
+        # назначаем каждой точки случайные координаты
+        dots = {i: [self.rs.rand() * 10, self.rs.rand() * 10] for i in range(n_vertice)}
         self.pos = dots
-        nbrs = NearestNeighbors(n_neighbors=mean_degree + 1, algorithm='ball_tree').fit(dots)
-        distances, indices = nbrs.kneighbors(dots)
+        # ищем mean degree + 1 ближайших соседей для каждой точки
+        dots_arr=list(dots.values())
+        nbrs = NearestNeighbors(n_neighbors=mean_degree + 1, algorithm='ball_tree').fit(dots_arr)
+        # ищем дистанцию и индексы соседей
+        distances, indices = nbrs.kneighbors(dots_arr)
         graph = {i: {} for i in range(n_vertice)}
-        print(distances)
-        print(indices)
+        # print(distances)
+        # print(indices)
         n_edges = mean_degree * n_vertice / 2
-
+        # пробегаемся по массиву соседей для каждой вершины, назначаем связи
         for i in range(len(indices)):
+
             n_neighbors = mean_degree - len(graph[i])
             i_neigh = indices[i].tolist()
             i_dist = distances[i].tolist()
@@ -78,11 +123,12 @@ class Graph:
             i_neigh.remove(i)
             i_dist.remove(0.)
             while j < n_neighbors and len(i_neigh) > 0:
+                # выбираем случайно вершину, если связи еще нет - создаем ее
 
                 v2 = self.rs.choice(i_neigh)
                 ind = i_neigh.index(v2)
                 i_neigh.remove(v2)
-
+                # TODO: спросить нужно ли учитывать дистанцию
                 # if i_dist[ind] > 0.5:
                 #     continue
 
@@ -103,12 +149,13 @@ class Graph:
 
     def graph_generation(self, n_vertice: int, mean_degree: int) -> dict:
         """
-            генерация графа
+            генерация графа (случайные соседи)
         """
 
         graph = {i: {} for i in range(n_vertice)}
 
         n_edges = mean_degree * n_vertice / 2
+        # каждой вершине назначем mean_degree случайных соседей
         while n_edges > 0:
 
             while True:
@@ -132,7 +179,13 @@ class Graph:
         return {i: self.rs.randint(n_colors) for i in self.graph}
 
     def create_err_table(self, n_colors):
-
+        """
+        таблица ошибок
+        :param n_colors:
+        :return:
+        представляет собой таблицу, где вертикально - вершины, горизонтально -цвета
+        в каждой клетке сумма соседей vi вершины ck цвета
+        """
         g = self.graph
         err_table = []
 
@@ -148,7 +201,7 @@ class Graph:
         return err_table
 
     def change_err_table(self, err_table, vertice, new_color):
-
+        # замена таблицы цветов, после смены цвета вершины
         neighbors = list(self.graph[vertice].keys())
         old_color = self.coloring[vertice]
 
@@ -174,7 +227,15 @@ class Graph:
         return tmine_arg, this_min_not_eq, q_arg
 
     def hill_climbing(self, n_colors: int, seed=77, coloring=None):
-
+        """
+        восхождение на гору
+        :param n_colors:
+        :param seed:
+        :param coloring:
+        :return:
+        определяем случайную раскраску, ищем вершину с наибольшим числом конфликтов, меняем ей цвет, на тот, который даст большую разницу.
+        продолжаем, пока замена цвета не перестанет давать результат
+        """
         g = self.graph
         if coloring is None:
             self.coloring = self.random_coloring(n_colors)
@@ -198,7 +259,7 @@ class Graph:
 
             d = delta_array[v_candidate]
             selected_color = new_colors[v_candidate]
-
+            # условие остановке, по невозможности поменять цвет либо по кол-ву операций
             if d >= 0:  # or k > 50000:
                 break
             fst_o += d
@@ -210,6 +271,16 @@ class Graph:
         return self.coloring, obj_array
 
     def annealing(self, n_colors: int, t: float, inc: float, coloring=None):
+        """
+        отжиг
+        :param n_colors:
+        :param t:
+        :param inc:
+        :param coloring:
+        :return:
+        ищем лучшую вершину для замены цвета при помощи таблицы ошибок, меняем ей цвет с некоторой вероятностью
+        продолжаем, пока температура не упадет достаточно низко
+        """
         g = self.graph
         if coloring is None:
             self.coloring = self.random_coloring(n_colors)
@@ -272,6 +343,15 @@ class Graph:
         return self.coloring, obj_array
 
     def annealing_snd(self, n_colors: int, t: float, inc: float, seed=77, coloring=None):
+        """
+        отжиг 2 моя версия наподумать на будущее (в диплом не идет)
+        :param n_colors:
+        :param t:
+        :param inc:
+        :param seed:
+        :param coloring:
+        :return:
+        """
 
         g = self.graph
         # print(coloring)
@@ -330,6 +410,100 @@ class Graph:
                     arr.append([self.graph[i][j], [i, j]])
         return arr
 
+    def to_adjacency_matrix(self,edges_tr=None) -> np.array:
+        matrix = np.zeros((len(self.graph), len(self.graph)))
+        if edges_tr is None:
+
+            for i in self.graph:
+                for j in self.graph[i].keys():
+                    matrix[i][j] = self.graph[i][j]
+        else:
+            for i, j in edges_tr:
+                matrix[i][j]=edges_tr[i,j]
+        return matrix
+    def decomposition(self, labels):
+        unique = np.unique(labels)
+        clusters = [[] for i in unique]
+        for i in range(len(labels)):
+            clusters[labels[i]].append(i)
+        print(self.graph)
+        print(clusters)
+
+    def split_graph_by_clusters(self, labels):
+        """
+        Splits a graph into subgraphs based on the given clusters.
+
+        Args:
+          graph: A dictionary representing the graph. Keys are node indices,
+                 and values are dictionaries mapping neighbor indices to edge weights.
+          clusters: A list of lists, where each inner list represents a cluster
+                    containing node indices.
+
+        Returns:
+          A list of subgraphs, where each subgraph is a dictionary representing
+          the connections within that cluster.
+        """
+        unique = np.unique(labels)
+        clusters = [[] for i in unique]
+        for i in range(len(labels)):
+            clusters[labels[i]].append(i)
+        print(len(clusters))
+        subgraphs = []
+        print(clusters)
+        for cluster in clusters:
+            subgraph = {}
+            p = {}
+            for node in cluster:
+
+                # p[node]=self.pos[node].copy()
+                subgraph[node] = {}  # Initialize node in subgraph
+                for neighbor, weight in self.graph.get(node, {}).items():
+                    if neighbor in cluster:  # Only include connections within the cluster
+                        subgraph[node][neighbor] = weight
+
+            new_sub=Graph()
+            new_sub.init_by_graph(subgraph, p)
+            subgraphs.append(new_sub)
+
+        return subgraphs
+
+    def transform_graph_with_mapping(self):
+        """
+        Transforms a graph represented as a dictionary of dictionaries into a
+        dictionary where keys are tuples of (node1, node2) and values are edge weights.
+        Additionally, remaps node indices to a range from 0 to len(graph_data) - 1
+        and returns the mapping between new and old node indices.
+
+        Args:
+          graph_data: A dictionary representing the graph. Keys are node indices,
+                      and values are dictionaries mapping neighbor indices to edge weights.
+
+        Returns:
+          A tuple containing:
+            - A dictionary representing the transformed graph with remapped node indices.
+            - A dictionary representing the mapping from new node indices to old node indices.
+        """
+
+        transformed_graph = {}
+        old_to_new_mapping = {node: i for i, node in
+                              enumerate(sorted(self.graph.keys()))}  # Create a mapping to new indices
+        new_to_old_mapping = {i: node for node, i in old_to_new_mapping.items()}  # Invert the mapping
+
+        for original_node1, neighbors in self.graph.items():
+            node1 = old_to_new_mapping[original_node1]  # Get the new index for node1
+
+            for original_node2, weight in neighbors.items():
+                node2 = old_to_new_mapping[original_node2]  # Get the new index for node2
+                # Ensure consistent ordering in the tuple key (node1 < node2)
+
+                key_1 = (node1, node2)
+
+                key_2 = (node2, node1)
+                transformed_graph[key_1] = weight / 2
+                transformed_graph[key_2] = weight / 2
+
+        return transformed_graph, old_to_new_mapping
+
 
 if __name__ == '__main__':
-    a = Graph(5, 3)
+    a = Graph(30, 3)

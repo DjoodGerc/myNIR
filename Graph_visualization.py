@@ -2,6 +2,7 @@ import random
 
 import matplotlib
 import networkx as nx
+import numpy as np
 from matplotlib import pyplot as plt
 from g_coloring import g_one, g_two, g_three, g_four
 
@@ -12,7 +13,7 @@ from Graph_generation import Graph
 matplotlib.use('TkAgg')
 
 
-def show_graph(G, coloring: dict, title=""):
+def show_graph(G, coloring: dict, title="",clustering=None):
     """
     визуализация графа, получение ошибки метода
     input: граф, кол-во цветов, метод (+для отжига начальная температура и скорость ее повышения)
@@ -28,10 +29,12 @@ def show_graph(G, coloring: dict, title=""):
     g.add_nodes_from(list(my_graph_class.graph.keys()))
 
     bind_colors = {}
-
+    n_colors_for_vis=n_colors
     # случайные цвета для визаулизации
+    if clustering is not None:
+        n_colors_for_vis=len(np.unique(clustering))
 
-    for i in range(n_colors):
+    for i in range(n_colors_for_vis):
 
         r = lambda: random.randint(0, 255)
         col = '#%02X%02X%02X' % (r(), r(), r())
@@ -42,14 +45,15 @@ def show_graph(G, coloring: dict, title=""):
         bind_colors.update({i: col})
 
     # словарь сопоставления номера цвета и реального цвета для визаулизации
-
-    colors = [bind_colors[coloring[i]] for i in list(my_graph_class.graph.keys())]
+    if clustering is not None:
+        colors = [bind_colors[i] for i in clustering]
+    else:
+        colors = [bind_colors[coloring[i]] for i in list(my_graph_class.graph.keys())]
 
     # библиотека для визуализации
 
     for i in range(len(list(my_graph_class.graph.keys()))):
         g.add_node(list(my_graph_class.graph.keys())[i], color=colors[i])
-
     # добавление ребер для визаулизации
 
     my_graph = my_graph_class.graph
@@ -70,9 +74,8 @@ def show_graph(G, coloring: dict, title=""):
     return G.get_obj(coloring)
 
 
-
 if __name__ == '__main__':
-    n_v=350
+    n_v=200
 
     g = Graph(n_v, 3)
     

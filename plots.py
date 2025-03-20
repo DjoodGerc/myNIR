@@ -1,8 +1,28 @@
 from Graph_generation import Graph
 import matplotlib
+
+from Gurobi_standart import gurobi_whith_clustering
+
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
+def plots(bot,top,n_colors):
+
+    hc_obj=[]
+    ann_obj=[]
+    gurobi_obj=[]
+    x=[]
+    for i in range(bot,top,20):
+        g=Graph()
+        g.graph_generation_knn(i,20)
+        hc_obj.append(g.get_obj(g.hill_climbing(n_colors)[0]))
+        ann_obj.append(g.get_obj(g.annealing(n_colors,10,1.001)[0]))
+        gurobi_obj.append(gurobi_whith_clustering(g,n_colors)[0])
+        x.append(i)
+    plt.plot(x,gurobi_obj,"red")
+    plt.plot(x,hc_obj,"blue")
+    plt.plot(x,ann_obj,"black")
+    plt.show()
 def errors_convergence(n_vertice,mean_degree, n_color,t,dec, seed=42):
     g = Graph(n_vertice, mean_degree)
     graphG=g.graph
@@ -46,7 +66,8 @@ def errors_convergence(n_vertice,mean_degree, n_color,t,dec, seed=42):
 
 
 if __name__ == '__main__':
-   errors_convergence(500,15,7,10,1.001)
+    plots(40,250,6)
+   # errors_convergence(500,15,7,10,1.001)
    # errors_convergence(17, 7,4, 12, 1.01)
 
 
