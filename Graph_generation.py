@@ -4,7 +4,6 @@ from networkx.classes import non_neighbors
 from sklearn.neighbors import NearestNeighbors
 
 
-
 # from plots import show_graph
 
 class Graph:
@@ -18,7 +17,6 @@ class Graph:
     def get_graph(self):
 
         return self.graph
-
 
     def init_by_graph(self, graph: dict, pos: dict):
         self.graph = dict(sorted(graph.items()))
@@ -88,11 +86,12 @@ class Graph:
                     already_checked[i].append(j)
 
         return err
+
     def get_n_edges(self):
-        n_edges=0
+        n_edges = 0
         for i in self.graph:
-            n_edges+=len(self.graph[i])
-        return n_edges/2
+            n_edges += len(self.graph[i])
+        return n_edges / 2
 
     def graph_generation_knn(self, n_vertice: int, mean_degree: int) -> dict:
         """
@@ -105,7 +104,7 @@ class Graph:
         dots = {i: [self.rs.rand() * 10, self.rs.rand() * 10] for i in range(n_vertice)}
         self.pos = dots
         # ищем mean degree + 1 ближайших соседей для каждой точки
-        dots_arr=list(dots.values())
+        dots_arr = list(dots.values())
         nbrs = NearestNeighbors(n_neighbors=mean_degree + 1, algorithm='ball_tree').fit(dots_arr)
         # ищем дистанцию и индексы соседей
         distances, indices = nbrs.kneighbors(dots_arr)
@@ -291,7 +290,7 @@ class Graph:
         obj_array = []
         obj_array.append(self.get_obj(self.coloring))
 
-        while t > 10 ** -5:
+        while t > 10 **-8:
 
             new_colors = []
             len_arr = len(err_table[0])
@@ -305,37 +304,36 @@ class Graph:
                 np.arange(n_vertices), list(self.coloring.values())]
 
             # ?
-            # v_candidate = np.random.randint(len(delta_array))
+            v_candidate = np.random.randint(len(delta_array))
 
-            fmne = self.find_min_not_eq_this(delta_array, new_colors)
-            if fmne[0] is None:
-                v_candidate = fmne[2]
-            elif fmne[1] < 0:
-                v_candidate = fmne[0]
-            elif fmne[2] is None:
-                v_candidate = fmne[0]
-            else:
-                r = self.rs.random()
-                if r < np.exp(-fmne[1] / t):
-
-                    v_candidate = fmne[0]
-                else:
-                    v_candidate = fmne[2]
-
-            if v_candidate is None:
-                v_candidate = 0
+            # fmne = self.find_min_not_eq_this(delta_array, new_colors)
+            # if fmne[0] is None:
+            #     v_candidate = fmne[2]
+            # elif fmne[1] < 0:
+            #     v_candidate = fmne[0]
+            # elif fmne[2] is None:
+            #     v_candidate = fmne[0]
+            # else:
+            #     r = self.rs.random()
+            #     if r < 1-np.exp(-fmne[1] / (1/t)):
+            #
+            #         v_candidate = fmne[0]
+            #     else:
+            #         v_candidate = fmne[2]
+            #
+            # if v_candidate is None:
+            #     v_candidate = 0
             d = delta_array[v_candidate]
 
             r = self.rs.random()
 
             selected_color = new_colors[v_candidate]
-
             if d < 0 or r < np.exp(-d / t):
-
                 err_table = self.change_err_table(err_table, v_candidate, selected_color)
                 self.coloring[v_candidate] = selected_color
                 obj_array.append(obj_array[len(obj_array) - 1] + d)
             else:
+
                 obj_array.append(obj_array[len(obj_array) - 1])
 
             t /= inc
@@ -369,7 +367,7 @@ class Graph:
         obj_array.append(self.get_obj(self.coloring))
         temp_array = []
 
-        while t > 10 ** -5:
+        while t > 10 ** -10:
 
             new_colors = []
             len_arr = len(err_table[0])
@@ -410,7 +408,7 @@ class Graph:
                     arr.append([self.graph[i][j], [i, j]])
         return arr
 
-    def to_adjacency_matrix(self,edges_tr=None) -> np.array:
+    def to_adjacency_matrix(self, edges_tr=None) -> np.array:
         matrix = np.zeros((len(self.graph), len(self.graph)))
         if edges_tr is None:
 
@@ -419,8 +417,9 @@ class Graph:
                     matrix[i][j] = self.graph[i][j]
         else:
             for i, j in edges_tr:
-                matrix[i][j]=edges_tr[i,j]
+                matrix[i][j] = edges_tr[i, j]
         return matrix
+
     def decomposition(self, labels):
         unique = np.unique(labels)
         clusters = [[] for i in unique]
@@ -461,7 +460,7 @@ class Graph:
                     if neighbor in cluster:  # Only include connections within the cluster
                         subgraph[node][neighbor] = weight
 
-            new_sub=Graph()
+            new_sub = Graph()
             new_sub.init_by_graph(subgraph, p)
             subgraphs.append(new_sub)
 
